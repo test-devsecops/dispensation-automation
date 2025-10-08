@@ -17,6 +17,106 @@ class CxApiActions:
 
         self.token, self.tenant_name, self.tenant_iam_url, self.tenant_url = self.config.get_config()
     
+    @ExceptionHandler.handle_exception()
+    def get_checkmarx_projects(self, empty_tag="false", project_name=None):
+
+        endpoint = self.apiEndpoints.retrieve_projects()
+        url = f"https://{self.tenant_url}{endpoint}"
+
+        headers = {
+            "accept": "application/json; version=1.0",
+            "authorization": f"Bearer {self.access_token}",
+            "Content-Type": "application/json; version=1.0"
+        }
+
+        limit = 100  
+        offset = 0   
+        all_projects = []
+
+        while True:
+            params = {
+                "limit": limit,
+                "offset": offset,
+                "empty-tags": empty_tag
+            }
+
+            if project_name is not None:
+                params["name-regex"] = f"(?i)^{project_name}$"
+
+            response = self.httpRequest.get_api_request(url, headers=headers, params=params)
+
+            if not response or "projects" not in response or not isinstance(response["projects"], list):
+                print("Error: 'projects' key missing or not a list in API response")
+                return None
+
+            all_projects.extend(response["projects"])
+
+            if len(response["projects"]) < limit:
+                break  
+
+            offset += limit
+
+        return all_projects
+
+    @ExceptionHandler.handle_exception(reraise=True)
+    def post_sca_update_package_state(self, packages_profile : list, action_type, state_value, end_date, comment=None):
+        endpoint = self.apiEndpoints.sca_update_package_state()
+        url = f"https://{self.tenant_url}{endpoint}"
+
+        headers = {
+            "accept": "application/json; version=1.0",
+            "authorization": f"Bearer {self.access_token}",
+            "Content-Type": "application/json; version=1.0"
+        }
+
+        json_payload = {
+            "packagesProfile":packages_profile,
+            "actions":[
+                {
+                    "actionType":action_type, #Ignore
+                    "value":{
+                        "state": state_value, # Snooze, Monitored
+                        "endDate":end_date # 2025-10-22T07:43:52.044Z
+                    },
+                    "comment": comment
+                }
+            ]
+        }
+
+        response = self.httpRequest.post_api_request(url, headers=headers, json=json_payload)
+        return response
+    
+    @ExceptionHandler.handle_exception()
+    def get_sca_vuln_details_by_package_name_version(self, package_name, package_version):
+
+        endpoint = self.apiEndpoints.sca_vuln_details_graphql()
+        url = f"https://{self.tenant_url}{endpoint}"
+
+        headers = {
+            "accept": "application/json; version=1.0",
+            "authorization": f"Bearer {self.access_token}",
+            "Content-Type": "application/json; version=1.0"
+        }
+
+        json_payload = {
+                "query": "query ($where: ReportingPackageModelFilterInput, $take: Int!, $skip: Int!, $order: [ReportingPackageModelSortInput!]) { reportingPackages (where: $where, take: $take, skip: $skip, order: $order) { packageId packageName packageVersion packageRepository outdated releaseDate newestVersion newestVersionReleaseDate numberOfVersionsSinceLastUpdate effectiveLicenses licenses projectName projectId scanId aggregatedCriticalVulnerabilities aggregatedHighVulnerabilities aggregatedMediumVulnerabilities aggregatedLowVulnerabilities aggregatedNoneVulnerabilities aggregatedCriticalSuspectedMalwares aggregatedHighSuspectedMalwares aggregatedMediumSuspectedMalwares aggregatedLowSuspectedMalwares aggregatedNoneSuspectedMalwares relation isDevDependency isTest isNpmVerified isPluginDependency isPrivateDependency tags scanDate status statusValue isMalicious usage isFixAvailable fixRecommendationVersion pendingStatus pendingStatusEndDate } }",
+                "variables": {
+                    "where": {
+                    "and": [
+                        { "packageName": { "eq": package_name } },
+                        { "packageVersion": { "eq": package_version } }
+                    ]
+                    },
+                    "take": 10,
+                    "skip": 0
+                }
+            }
+
+        response = self.httpRequest.post_api_request(url, headers=headers, json=json_payload)
+        return response
+
+    # ------------------------------- NOT BEING USED --------------------------------------------
+    
     @ExceptionHandler.handle_exception
     def get_sast_results(self, scan_id, vuln_id=None):
         """

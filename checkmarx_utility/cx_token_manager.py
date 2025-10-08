@@ -22,7 +22,7 @@ class AccessTokenManager:
     @ExceptionHandler.handle_exception
     def fetch_new_token(self):
 
-        endpoint = self.apiEndpoints.get_access_token(self.tenant_name)
+        endpoint = self.apiEndpoints.openid_token(self.tenant_name)
         url = f"https://{self.tenant_iam_url}{endpoint}"
         headers = {
             "accept": "application/json",

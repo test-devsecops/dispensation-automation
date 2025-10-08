@@ -5,53 +5,87 @@ import sys
 import traceback
 
 class ExceptionHandler:
-    @staticmethod
-    def handle_exception(func):
-        @functools.wraps(func)
-        def wrapper(*args, **kwargs):
-            self = args[0] if args else None
-            logger = getattr(self, "logger", None)
 
-            try:
-                return func(*args, **kwargs)
-            except Exception as err:
-                exc_type, exc_value, exc_tb = sys.exc_info()
-                tb = traceback.extract_tb(exc_tb)
-                if tb:
-                    last_frame = tb[-1]
-                    filename = last_frame.filename
-                    lineno = last_frame.lineno
-                    funcname = last_frame.name
-                else:
-                    filename = funcname = lineno = "Unknown"
-                if isinstance(err, requests.exceptions.HTTPError):
-                    err_type = "HTTP Error"
-                elif isinstance(err, requests.exceptions.RequestException):
-                    err_type = "RequestException"
-                else:
-                    err_type = "Unexpected Error"
-                msg = (f"{err_type}: {err} | "
-                       f"File: {filename} | Function: {funcname} | Line: {lineno}")
-                if logger:
-                    logger.error(msg)
-                else:
-                    print(msg)
+    @staticmethod
+    def _find_logger(self):
+        """Dynamically find a logger-like attribute in self."""
+        if not self:
             return None
-        return wrapper
+
+        for attr_name in dir(self):
+            if attr_name.startswith("__"):
+                continue
+            attr = getattr(self, attr_name)
+            if callable(getattr(attr, "error", None)) and callable(getattr(attr, "info", None)):
+                return attr
+        return None
 
     @staticmethod
-    def handle_exception_with_retries(retries=1, delay=1.3):
-        def decorator(func):
-            @functools.wraps(func)
+    def handle_exception(func=None, *, custom_message=None, reraise=False, logger=None):
+        """
+        Flexible decorator with optional custom message, logger injection, and reraise support.
+        Works for static/class/instance methods.
+        """
+        def decorator(inner_func):
+            @functools.wraps(inner_func)
             def wrapper(*args, **kwargs):
-                self = args[0] if args else None
-                logger = getattr(self, "logger", None)
+                # Try to find logger from self, or use the injected one
+                self_obj = args[0] if args else None
+                log = ExceptionHandler._find_logger(self_obj) or logger
 
-                attempt = 0
-                while attempt < retries:
+                try:
+                    return inner_func(*args, **kwargs)
+                except Exception as err:
+                    exc_type, exc_value, exc_tb = sys.exc_info()
+                    tb = traceback.extract_tb(exc_tb)
+                    if tb:
+                        last_frame = tb[-1]
+                        filename = last_frame.filename
+                        lineno = last_frame.lineno
+                        funcname = last_frame.name
+                    else:
+                        filename = funcname = lineno = "Unknown"
+
+                    err_type = type(err).__name__
+                    msg = f"{err_type}: {err} | File: {filename} | Function: {funcname} | Line: {lineno}"
+                    if custom_message:
+                        msg = f"{custom_message} | {msg}"
+
+                    if log:
+                        log_func = log.warning if isinstance(err, ValueError) else log.error
+                        log_func(msg)
+                    else:
+                        print(f"[LOG] {msg}")
+
+                    if reraise:
+                        raise
+                return None
+            return wrapper
+
+        if callable(func):
+            return decorator(func)
+        return decorator
+
+    @staticmethod
+    def handle_exception_with_retries(func=None, *, retries=2,delay=1.5,custom_message=None,reraise=False,logger=None
+    ):
+        """
+        Flexible retry decorator with dynamic logger detection, injected logger support,
+        custom messages, and re-raise option.
+
+        Works for instance, class, and static methods.
+        """
+        def decorator(inner_func):
+            @functools.wraps(inner_func)
+            def wrapper(*args, **kwargs):
+                self_obj = args[0] if args else None
+                log = ExceptionHandler._find_logger(self_obj) or logger
+
+                for attempt in range(1, retries + 1):
                     try:
-                        return func(*args, **kwargs)
+                        return inner_func(*args, **kwargs)
                     except Exception as err:
+                        # Extract traceback info
                         exc_type, exc_value, exc_tb = sys.exc_info()
                         tb = traceback.extract_tb(exc_tb)
                         if tb:
@@ -61,23 +95,31 @@ class ExceptionHandler:
                             funcname = last_frame.name
                         else:
                             filename = funcname = lineno = "Unknown"
-                        if isinstance(err, requests.exceptions.HTTPError):
-                            err_type = "HTTP Error"
-                        elif isinstance(err, requests.exceptions.RequestException):
-                            err_type = "RequestException"
+
+                        err_type = type(err).__name__
+                        msg = (f"{err_type}: {err} | File: {filename} | Function: {funcname} | "
+                            f"Line: {lineno} | Retry {attempt}/{retries}")
+                        if custom_message:
+                            msg = f"{custom_message} | {msg}"
+
+                        # Log dynamically
+                        if log:
+                            log_func = log.warning if isinstance(err, ValueError) else log.error
+                            log_func(msg)
                         else:
-                            err_type = "Unexpected Error"
-                        msg = (f"{err_type}: {err} | "
-                               f"File: {filename} | Function: {funcname} | Line: {lineno}")
+                            print(f"[LOG] {msg}")
 
-                    attempt += 1
-                    if logger:
-                        logger.error(f"{msg} | Retry {attempt}/{retries}")
-                    else:
-                        print(f"{msg} | Retry {attempt}/{retries}")
+                        # Wait or re-raise
+                        if attempt < retries:
+                            time.sleep(delay)
+                        elif reraise:
+                            raise
 
-                    if attempt < retries:
-                        time.sleep(delay)
                 return None
             return wrapper
+
+        # Supports both decorator styles: @decorator and @decorator()
+        if callable(func):
+            return decorator(func)
         return decorator
+

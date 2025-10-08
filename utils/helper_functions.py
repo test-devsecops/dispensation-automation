@@ -1,5 +1,7 @@
-from utils.json_file_utility import JSONFile
-from urllib.parse import urlparse, parse_qs
+from utils.logger import Logger
+from utils.exception_handler import ExceptionHandler
+from datetime import datetime, timedelta
+from dateutil.relativedelta import relativedelta
 
 from datetime import datetime
 
@@ -7,6 +9,7 @@ import string
 import re
 
 class HelperFunctions:
+    logger = Logger("helper_functions")
     
     @staticmethod
     def get_today_date_yyyymmdd():
@@ -51,4 +54,38 @@ class HelperFunctions:
     @staticmethod
     def shorten_strings_middle(s, front=6, back=4):
         return s if len(s) <= (front + back) else s[:front] + "..." + s[-back:]
+    
+    @staticmethod
+    @ExceptionHandler.handle_exception_with_retries(logger=logger)
+    def get_future_date(time_text: str) -> str:
+        # Get current UTC datetime
+        now = datetime.utcnow()
+
+        # Normalize input text
+        time_text = time_text.strip().lower()
+
+        # Extract numeric value
+        parts = time_text.split()
+        if len(parts) < 2:
+            raise ValueError("Input must include both number and unit (e.g., '15 days')")
+
+        try:
+            number = int(parts[0])
+        except ValueError:
+            raise ValueError("The first part must be a number (e.g., '15 days')")
+
+        unit = parts[1]
+        
+        # Compute based on unit
+        if "day" in unit:
+            future_date = now + timedelta(days=number)
+        elif "week" in unit:
+            future_date = now + timedelta(weeks=number)
+        elif "month" in unit:
+            future_date = now + relativedelta(months=number)
+        else:
+            raise ValueError("Unsupported time unit. Use 'days', 'weeks', or 'months'.")
+
+        # Return ISO 8601 format with milliseconds and 'Z'
+        return future_date.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z"
 

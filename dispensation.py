@@ -60,12 +60,59 @@ def _assemble_sast_attack_vector_url(github_repo_url: str, params: dict) -> str:
 
 # TODO: Change the TEST prefix to a proper variable
 def main():
+
+    # ---------------- VARIABLES FOR TESTING -------------------
+
+    SCAN_TYPE_SAST = "SAST"
+    SCAN_TYPE_SCA = "SCA"
+    SCAN_TYPE_CSEC = "CSEC"
+
+    SCA_PROJECT_NAME= "test-devsecops/devsecops"
+    SCA_PACKAGE_NAME = ["multer 1.4.5-lts.2", "express 5.1.0"]
+    SCA_END_DISPENSATION_DATE = "15 Days" #15 Days, 1 month, 2 months, 3 months, 6 months
+    COMMENT = "This is testing"
+
+    # ---------------- VARIABLES FOR TESTING -------------------
+
     log = Logger("dispensation")
     access_token_manager = AccessTokenManager(logger=log)
     access_token = access_token_manager.get_valid_token()
     cx_api_actions = CxApiActions(access_token=access_token, logger=log)
     helper = HelperFunctions()
     cx_helper = CxHelperFunctions()
+
+    # packages profile
+
+    scan_type = SCAN_TYPE_SCA
+
+    if scan_type == SCAN_TYPE_SCA:
+
+        cx_projects = cx_api_actions.get_checkmarx_projects(project_name=SCA_PROJECT_NAME)
+        project_id = cx_projects[0].get('id')
+
+        packages_profile = []
+
+        for package in SCA_PACKAGE_NAME:
+            package_name, package_version = cx_helper.set_package_and_version(package)
+            package_details = cx_api_actions.get_sca_vuln_details_by_package_name_version(package_name, package_version)
+            package = helper.get_nested(package_details, ['data', 'reportingPackages'])
+            package_repository = package[0].get('packageRepository')
+
+            package_profile = {
+                "projectId": project_id,
+                "packageName":package_name,
+                "packageVersion": package_version,
+                "packageManager":package_repository
+            }
+
+            packages_profile.append(package_profile)
+
+        end_date = helper.get_future_date(SCA_END_DISPENSATION_DATE)
+        update_package_response = cx_api_actions.post_sca_update_package_state(packages_profile, "Ignore", "Snooze", end_date, COMMENT)
+        
+        # Expecting None response
+        if update_package_response is None:
+            log.info(f"Succesffuly snoozed the packages {SCA_PACKAGE_NAME}")
 
 if __name__ == "__main__":
     main()
