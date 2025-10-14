@@ -66,7 +66,7 @@ class CxApiActions:
 
         return all_projects
 
-    @ExceptionHandler.handle_exception()
+    @ExceptionHandler.handle_exception(reraise=True, log_error=False)
     def post_sca_update_package_state(self, packages_profile : list, action_type, state_value, end_date, comment=None):
         endpoint = self.apiEndpoints.sca_update_package()
         url = f"https://{self.tenant_url}{endpoint}"
@@ -94,7 +94,7 @@ class CxApiActions:
         response = self.httpRequest.post_api_request(url, headers=headers, json=json_payload)
         return response
     
-    @ExceptionHandler.handle_exception()
+    @ExceptionHandler.handle_exception(reraise=True, log_error=False)
     def get_sca_vuln_details_by_package_name_version(self, package_name, package_version):
 
         endpoint = self.apiEndpoints.sca_vuln_details_graphql()
@@ -169,7 +169,7 @@ class CxApiActions:
         response = self.httpRequest.post_api_request(url, headers=headers, json=json_payload)
         return response
     
-    @ExceptionHandler.handle_exception(reraise=True)
+    @ExceptionHandler.handle_exception(reraise=True, log_error=False)
     def get_image_id_graphql(self, scan_id, project_id):
 
         endpoint = self.apiEndpoints.csec_vuln_details_graphql()
@@ -221,6 +221,37 @@ class CxApiActions:
                 }
                 }
             }
+        }
+
+        response = self.httpRequest.post_api_request(url, headers=headers, json=json_payload)
+        return response
+    
+    @ExceptionHandler.handle_exception(reraise=True, log_error=False)
+    def post_sca_recalculate(self, project_id, branch):
+
+        endpoint = self.apiEndpoints.sca_recalculate()
+        url = f"https://{self.tenant_url}{endpoint}"
+
+        headers = {
+            "accept": "application/json; version=1.0",
+            "authorization": f"Bearer {self.access_token}",
+            "Content-Type": "application/json; version=1.0"
+        }
+
+        json_payload = {
+            "project_id": project_id,
+            "branch": branch,
+            "engines": [
+                "sca"
+            ],
+            "config": [
+                {
+                    "type": "sca",
+                    "value": {
+                        "enableContainersScan": False
+                    }
+                }
+            ]
         }
 
         response = self.httpRequest.post_api_request(url, headers=headers, json=json_payload)

@@ -34,3 +34,8 @@ class CxApiEndpoints:
     def csec_vuln_details_graphql():
         endpoint = f"/api/containers/buffet/graphql"
         return endpoint
+    
+    @staticmethod
+    def sca_recalculate():
+        endpoint = "/api/scans/recalculate"
+        return endpoint
