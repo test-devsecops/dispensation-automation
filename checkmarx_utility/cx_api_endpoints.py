@@ -6,16 +6,31 @@ class CxApiEndpoints:
         return endpoint
     
     @staticmethod
-    def retrieve_projects():
+    def projects():
         endpoint = "/api/projects/"
         return endpoint
 
     @staticmethod
-    def sca_update_package_state():
+    def sca_update_package():
         endpoint = "/api/sca/management-of-risk/packages/bulk"
         return endpoint
     
     @staticmethod
     def sca_vuln_details_graphql():
-        endpoint = f"/api/sca/graphql/graphql"
+        endpoint = "/api/sca/graphql/graphql"
+        return endpoint
+    
+    @staticmethod
+    def project_latest_scan():
+        endpoint = "/api/projects/last-scan"
+        return endpoint
+    
+    @staticmethod
+    def csec_package_update():
+        endpoint = "/api/containers/triage/triage/package-update"
+        return endpoint
+    
+    @staticmethod
+    def csec_vuln_details_graphql():
+        endpoint = f"/api/containers/buffet/graphql"
         return endpoint

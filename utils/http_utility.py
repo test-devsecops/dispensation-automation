@@ -8,30 +8,20 @@ class HttpRequests:
         if self.logger:
             self.logger.info(f"{method_name} {response.url} - Status Code: {response.status_code}")
 
-        # Successful response
         if response.status_code in valid_status_codes:
             if response.content and response.content.strip():
                 try:
                     return response.json()
                 except ValueError:
                     return response.text
-            else:
-                return None
+            return None
         else:
-            # Error response
             try:
                 error_details = response.json()
             except ValueError:
-                error_details = response.text
-
-            # Log the error for visibility
-            if self.logger:
-                self.logger.error(
-                    f"{response.status_code} Error: {response.reason} for url: {response.url} | Response: {error_details}"
-                )
-
-            # Return both status and error details
-            return error_details
+                error_details = response.text.strip() or "Unknown error"
+            
+            raise Exception(f"{response.status_code} Error: {error_details}")
 
     def post_api_request(self, url, headers=None, data=None, params=None, json=None):
         response = requests.post(url, headers=headers, data=data, params=params, json=json, timeout=120)
