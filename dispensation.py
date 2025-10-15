@@ -16,7 +16,6 @@ LOG = Logger("dispensation")
 
 def main():
 
-    log = Logger("dispensation")
     try:
         parser = argparse.ArgumentParser(
             description="AppSec Dispensation Script"
@@ -43,8 +42,8 @@ def main():
             jira_issue_fields = jira_issue_data.get("fields")
             jira_issue_fields = JiraHelperFunctions.remove_all_null_key_values(jira_issue_fields)
         except Exception as e:
-            log.error(f"Failed to fetch or process Jira issue data: {e}")
-            jira_api_actions.update_exception_comment_issue(jira_issue, log, "Failed to fetch Jira issue data")
+            LOG.error(f"Failed to fetch or process Jira issue data: {e}")
+            jira_api_actions.update_exception_comment_issue(jira_issue, LOG, "Failed to fetch Jira issue data")
             return 1
 
         field_map = load_map('config/field_mapping.yml',parent_field='fields')
@@ -160,20 +159,22 @@ def main():
                 if update_csec_package:
                     LOG.success(f"Successfully snoozed {csec_package} for {CSEC_END_DISPENSATION_DATE}")
         else:
-            jira_api_actions.update_exception_comment_issue(jira_issue, log, value_error)
-            log.info(f"The {scan_engine} Scan type is not supported by this workflow automation.")
+            jira_api_actions.update_exception_comment_issue(jira_issue, LOG, value_error)
+            LOG.info(f"The {scan_engine} Scan type is not supported by this workflow automation.")
             return 1
+        jira_api_actions.update_successful_comment_issue(jira_issue,LOG)
+        return 0
 
     except ValueError as value_error:
-        jira_api_actions.update_exception_comment_issue(jira_issue, log, value_error)
-        log.error(f"Value error: {value_error}")
-        log.error("Dispensation Update failed.")
+        jira_api_actions.update_exception_comment_issue(jira_issue, LOG, value_error)
+        LOG.error(f"Value error: {value_error}")
+        LOG.error("Dispensation Update failed.")
         return 1
 
     except Exception as e:
-        jira_api_actions.update_exception_comment_issue(jira_issue, log, "Unexpected Error, Please check logs")
-        log.error(f"Unexpected error: {e}")
-        log.error(
+        jira_api_actions.update_exception_comment_issue(jira_issue, LOG, "Unexpected Error, Please check logs")
+        LOG.error(f"Unexpected error: {e}")
+        LOG.error(
         "Dispensation Update failed."
         "[DEBUG GUIDE] If the issue persists, check config/field_mapping.yml for incorrect mappings "
         "between JIRA and the local configuration."
