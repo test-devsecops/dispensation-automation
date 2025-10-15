@@ -38,16 +38,10 @@ def main():
             jira_issue_fields = JiraHelperFunctions.remove_all_null_key_values(jira_issue_fields)
         except Exception as e:
             log.error(f"Failed to fetch or process Jira issue data: {e}")
-            jira_api_actions.populate_exception_comment_issue(jira_issue, log)
+            jira_api_actions.update_exception_comment_issue(jira_issue, log, "Failed to fetch Jira issue data")
             return 1
 
-        try:
-            field_map = load_map('config/field_mapping.yml',parent_field='fields')
-            # user_type = load_map('config/user_type.yml',parent_field='user_type')
-        except Exception as e:
-            log.error(f"Failed to load yaml mapping: {e}")
-            jira_api_actions.populate_exception_comment_issue(jira_issue, log)
-            return 1
+        field_map = load_map('config/field_mapping.yml',parent_field='fields')
 
         # Extracting data to be readable
         parent_data = {}

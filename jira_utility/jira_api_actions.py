@@ -129,12 +129,10 @@ class JiraApiActions:
         except Exception as e:
             log.error(f"Failed to comment issue with error : {e}")
 
-    def update_successful_comment_issue(self, jira_issue: str, log: Logger, stage: bool):
+    def update_successful_comment_issue(self, jira_issue: str, log: Logger):
         try:
-            if stage == True:
-                message = f"[SUCCESS] Population Success"
-            else:
-                message = f"[SUCCESS] Triage Update Success"
+            message = "[SUCESS] Dispensation successful."
+          
            
             self.comment_issue(message, jira_issue)
             log.info(f"Commented on Ticket {jira_issue} with success.")
