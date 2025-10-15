@@ -21,9 +21,9 @@ class ExceptionHandler:
         return None
 
     @staticmethod
-    def handle_exception(func=None, *, custom_message=None, reraise=False, logger=None):
+    def handle_exception(func=None, *, custom_message=None, reraise=False, logger=None, log_error=True):
         """
-        Flexible decorator with optional custom message, logger injection, and reraise support.
+        Flexible decorator with optional custom message, logger injection, reraise support, and log_error toggle.
         Works for static/class/instance methods.
         """
         def decorator(inner_func):
@@ -51,11 +51,12 @@ class ExceptionHandler:
                     if custom_message:
                         msg = f"{custom_message} | {msg}"
 
-                    if log:
-                        log_func = log.warning if isinstance(err, ValueError) else log.error
-                        log_func(msg)
-                    else:
-                        print(f"[LOG] {msg}")
+                    if log_error:
+                        if log:
+                            log_func = log.warning if isinstance(err, ValueError) else log.error
+                            log_func(msg)
+                        else:
+                            print(f"[LOG] {msg}")
 
                     if reraise:
                         raise
@@ -67,8 +68,7 @@ class ExceptionHandler:
         return decorator
 
     @staticmethod
-    def handle_exception_with_retries(func=None, *, retries=2,delay=1.5,custom_message=None,reraise=False,logger=None
-    ):
+    def handle_exception_with_retries(func=None, *, retries=2, delay=1.5, custom_message=None, reraise=False, logger=None, log_error=True):
         """
         Flexible retry decorator with dynamic logger detection, injected logger support,
         custom messages, and re-raise option.
@@ -103,11 +103,12 @@ class ExceptionHandler:
                             msg = f"{custom_message} | {msg}"
 
                         # Log dynamically
-                        if log:
-                            log_func = log.warning if isinstance(err, ValueError) else log.error
-                            log_func(msg)
-                        else:
-                            print(f"[LOG] {msg}")
+                        if log_error:
+                            if log:
+                                log_func = log.warning if isinstance(err, ValueError) else log.error
+                                log_func(msg)
+                            else:
+                                print(f"[LOG] {msg}")
 
                         # Wait or re-raise
                         if attempt < retries:
@@ -122,4 +123,3 @@ class ExceptionHandler:
         if callable(func):
             return decorator(func)
         return decorator
-
