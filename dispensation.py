@@ -3,7 +3,6 @@ from checkmarx_utility.cx_api_actions import CxApiActions
 from checkmarx_utility.cx_token_manager import AccessTokenManager
 from utils.helper_functions import HelperFunctions
 from checkmarx_utility.cx_helper_functions import CxHelperFunctions
-from utils.exception_handler import ExceptionHandler
 from utils.logger import Logger
 
 import os
@@ -37,9 +36,9 @@ def main():
     SCAN_TYPE_CSEC = "CSEC"
 
     SCA_PROJECT_NAME= "test-devsecops/devsecops"
-    SCA_PACKAGES = ["multer 1.4.5-lts.2", "express 5.1.0"]
+    SCA_PACKAGES = ["multer 1.4.5-lts.2", "express 5.1.0", "append-field 1.0.0"]
     SCA_END_DISPENSATION_DATE = "15 Days" #15 Days, 1 month, 2 months, 3 months, 6 months
-    SCA_BRANCH = "master"
+    SCA_BRANCH = "release"
 
     CSEC_PROJECT_NAME= "csec-test-azure"
     CSEC_PACKAGES = ["perl-base:5.36.0-7+deb12u2", "perl:5.36.0-7+deb12u2", "libc-bin:2.36-9+deb12u10"]
@@ -56,7 +55,7 @@ def main():
     helper = HelperFunctions()
     cx_helper = CxHelperFunctions()
 
-    scan_type = SCAN_TYPE_SCA
+    scan_type = SCAN_TYPE_CSEC
 
     if scan_type == SCAN_TYPE_SCA:
 
@@ -73,13 +72,13 @@ def main():
         for package in SCA_PACKAGES:
             package_name, package_version = cx_helper.set_package_and_version(package)
             package_details = cx_api_actions.get_sca_vuln_details_by_package_name_version(package_name, package_version)
-            package = helper.get_nested(package_details, ['data', 'reportingPackages'])
+            package_info = helper.get_nested(package_details, ['data', 'reportingPackages'])
 
-            if not package:
-                LOG.error(f"Package {package_name} is not found.")
+            if not package_info:
+                LOG.skipped(f"Package {package} is not found. Skipping...")
                 continue
 
-            package_repository = package[0].get('packageRepository')
+            package_repository = package_info[0].get('packageRepository')
 
             package_profile = {
                 "projectId": project_id,
@@ -96,7 +95,10 @@ def main():
             return
 
         cx_api_actions.post_sca_update_package_state(packages_profile, "Ignore", "Snooze", end_date, COMMENT)
-        cx_api_actions.post_sca_recalculate(project_id, SCA_BRANCH)
+        recalculate = cx_api_actions.post_sca_recalculate(project_id, SCA_BRANCH)
+
+        if recalculate and recalculate.get('status') == 'Running':
+            LOG.success(f"Successfully triggered recalculation")
 
     if scan_type == SCAN_TYPE_CSEC:
 
