@@ -31,6 +31,12 @@ def main():
         print(f"Jira issue: {jira_issue}")
 
         jira_api_actions = JiraApiActions()
+        access_token_manager = AccessTokenManager(logger=LOG)
+        access_token = access_token_manager.get_valid_token()
+        cx_api_actions = CxApiActions(access_token=access_token, logger=LOG)
+        helper = HelperFunctions()
+        cx_helper = CxHelperFunctions()
+        jira_helper = JiraHelperFunctions()
 
         try:
             jira_issue_data = jira_api_actions.get_issue(jira_issue)
@@ -56,14 +62,6 @@ def main():
         SCAN_TYPE_CSEC = "CSEC"
 
         COMMENT = parent_data.get('comment')
-
-        access_token_manager = AccessTokenManager(logger=LOG)
-        access_token = access_token_manager.get_valid_token()
-        cx_api_actions = CxApiActions(access_token=access_token, logger=LOG)
-        helper = HelperFunctions()
-        cx_helper = CxHelperFunctions()
-        jira_helper = JiraHelperFunctions
-
         # scan_type = SCAN_TYPE_CSEC
         scan_type = scan_engine
 
