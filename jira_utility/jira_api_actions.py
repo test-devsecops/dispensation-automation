@@ -16,12 +16,12 @@ import json
 
 class JiraApiActions:
 
-    def __init__(self, configEnvironment=None):
+    def __init__(self):
         self.httpRequest = HttpRequests()
         self.apiEndpoints = JiraApiEndpoints()
         self.config = Config()
 
-        self.token, self.project_id, self.jira_url, self.issuetype_id = self.config.get_config(configEnvironment)
+        self.token, self.project_id, self.jira_url = self.config.get_config()
 
     @ExceptionHandler.handle_exception
     def get_queues(self):
@@ -120,24 +120,9 @@ class JiraApiActions:
         response = self.httpRequest.post_api_request(url, headers=headers, json=payload)
         return response
 
-
-    def populate_exception_comment_issue(self, jira_issue: str, log: Logger, scan_id: str = None, error_message: str = None):
-        try:
-            if scan_id and error_message:
-                message = f"[ERROR] Population Error | Failed to fetch scan details for scan_id: {scan_id}. Error: {error_message}."
-            elif scan_id:
-                message = f"[ERROR] Population Error | Failed to fetch scan details for scan_id: {scan_id}."
-            else:
-                message = "[ERROR] Population Error |  An unexpected error occurred. Please notify adminstrator."
-            
-            self.comment_issue(message, jira_issue)
-            log.info(f"Commented Ticket {jira_issue} with error.")
-        except Exception as e:
-            log.error(f"Failed to comment issue with error : {e}")
-
     def update_exception_comment_issue(self, jira_issue: str, log: Logger, error_message: str = None):
         try:
-            message = f"[ERROR] Update Error | Failed to Triage. Error: {error_message}."
+            message = f"[ERROR] Dispensation Error | Failed to process dispensation. Error: {error_message}."
            
             self.comment_issue(message, jira_issue)
             log.info(f"Commented on Ticket {jira_issue} with error.")

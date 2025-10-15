@@ -8,9 +8,13 @@ on:
         description: "Jira Issue ID"
         default: ''
         type: string
+      scan_engine:
+        description: "Scan Engine"
+        default: ''
+        type: string
 
 jobs:
-  update-cx-finding:
+  dispensation-jira-cx:
     runs-on: ubuntu-latest
 
     env:
@@ -48,3 +52,4 @@ jobs:
         run: |
           python3 dispensation.py \
             "${{ github.event.inputs.jira_issue }}" \
+            "${{ github.event.inputs.scan_engine }}" \
