@@ -9,7 +9,7 @@ import string
 import re
 
 class HelperFunctions:
-    logger = Logger("helper_functions")
+    logger = Logger(create_log_file=False)
     
     @staticmethod
     def get_today_date_yyyymmdd():
