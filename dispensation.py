@@ -83,7 +83,7 @@ def main():
             for package in SCA_PACKAGES:
                 package_name, package_version = cx_helper.set_package_and_version(package)
                 if not package_name or not package_version:
-                    raise ValueError(f"{package} is an invalid input. Please use a space between the package name and version (e.g. urllib3 1.23")
+                    raise ValueError(f"{package} is an invalid input. Please use a space between the package name and version (e.g. urllib3 1.23)")
 
                 package_details = cx_api_actions.get_sca_vuln_details_by_package_name_version(package_name, package_version)
                 package_info = helper.get_nested(package_details, ['data', 'reportingPackages'])
