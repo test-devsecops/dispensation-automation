@@ -82,6 +82,9 @@ def main():
 
             for package in SCA_PACKAGES:
                 package_name, package_version = cx_helper.set_package_and_version(package)
+                if not package_name or not package_version:
+                    raise ValueError(f"{package} is an invalid input. Please use a space between the package name and version (e.g. urllib3 1.23)")
+
                 package_details = cx_api_actions.get_sca_vuln_details_by_package_name_version(package_name, package_version)
                 package_info = helper.get_nested(package_details, ['data', 'reportingPackages'])
 
@@ -137,7 +140,7 @@ def main():
             end_date = helper.get_future_date(CSEC_END_DISPENSATION_DATE)
 
             if not end_date:
-                raise ValueError("End date not speicified")
+                raise ValueError("End date not specified")
             
             images = cx_api_actions.get_image_id_graphql(latest_scan_id, project_id)
 
@@ -159,9 +162,8 @@ def main():
                 if update_csec_package:
                     LOG.success(f"Successfully snoozed {csec_package} for {CSEC_END_DISPENSATION_DATE}")
         else:
-            jira_api_actions.update_exception_comment_issue(jira_issue, LOG, value_error)
-            LOG.info(f"The {scan_engine} Scan type is not supported by this workflow automation.")
-            return 1
+            raise ValueError(f"The {scan_engine} Scan type is not supported by this workflow automation.")
+
         jira_api_actions.update_successful_comment_issue(jira_issue,LOG)
         return 0
 
