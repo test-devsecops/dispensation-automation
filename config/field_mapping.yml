@@ -1,10 +1,7 @@
 fields:
-  lbu: customfield_16500
   project_name: customfield_16501
   branch_name: customfield_16507
-  environment_name : customfield_16942
   dispensation_duration: customfield_17007
-  scan_engine: customfield_16923
   package_name_or_versions : customfield_17009
   comment: customfield_16930
   # vulnerability_ids: customfield_17009 # sast field unavailable
