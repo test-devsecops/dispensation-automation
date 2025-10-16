@@ -15,6 +15,10 @@ class HttpRequests:
                 except ValueError:
                     return response.text
             return None
+        elif response.status_code in [400]:
+            error_details = response.json()
+            self.logger.info(f"{method_name} {response.url} - Status Code: {response.status_code} - Response Body: {response.json()}")
+            raise ValueError(f"Bad Request - Invalid request. Some required information is missing or formatted incorrectly.")
         else:
             try:
                 error_details = response.json()

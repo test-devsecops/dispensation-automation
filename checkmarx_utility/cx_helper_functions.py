@@ -14,8 +14,12 @@ class CxHelperFunctions:
         Splits a package string into name and version for SCA.
         Example: 'multer 1.4.5-lts.2' -> ('multer', '1.4.5-lts.2')
         """
-        name, version = package_version.rsplit(" ", 1)
-        return name, version
+        try:
+            name, version = package_version.rsplit(" ", 1)
+            return name, version
+        except Exception as e:
+            return None, None
+
     
     @staticmethod
     def extract_ids_from_result_url(result_url):
