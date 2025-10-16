@@ -36,9 +36,17 @@ class JiraHelperFunctions:
             return None
 
     @staticmethod
-    def parse_sca_input(data: dict):
+    def parse_sca_input(data: str):
         try:
-            return data
+            input_packages = data.split(';')
+            packages = []
+
+            for pkg in input_packages:
+                pkg = pkg.strip()
+                if pkg:  # make sure it's not empty
+                    packages.append(pkg)
+            return packages
+
         except Exception as e:
             print(f"Error in parsing SCA: {e}")
             return None
@@ -46,7 +54,18 @@ class JiraHelperFunctions:
     @staticmethod
     def parse_csec_input(data: dict):
         try:
-            return data
+            input_packages = data.split(';')
+            packages = []
+
+            for pkg in input_packages:
+                pkg = pkg.strip()
+                if pkg:  # make sure it's not empty
+                    packages.append(pkg)
+
+            packages = [s.replace(" ", ":") for s in packages]
+
+            return packages 
+
         except Exception as e:
             print(f"Error in parsing CSEC: {e}")
             return None

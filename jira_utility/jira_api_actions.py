@@ -6,6 +6,8 @@ from utils.http_utility import HttpRequests
 
 from urllib.parse import urlencode
 
+from utils.logger import Logger
+
 import requests
 import base64
 import sys
@@ -14,12 +16,12 @@ import json
 
 class JiraApiActions:
 
-    def __init__(self, configEnvironment=None):
+    def __init__(self):
         self.httpRequest = HttpRequests()
         self.apiEndpoints = JiraApiEndpoints()
         self.config = Config()
 
-        self.token, self.project_id, self.jira_url, self.issuetype_id = self.config.get_config(configEnvironment)
+        self.token, self.project_id, self.jira_url = self.config.get_config()
 
     @ExceptionHandler.handle_exception
     def get_queues(self):
@@ -100,3 +102,39 @@ class JiraApiActions:
 
         response = self.httpRequest.post_api_request(url, headers=headers, json=payload)
         return response
+
+    @ExceptionHandler.handle_exception
+    def comment_issue(self, comment_message, issue_key):
+        endpoint = self.apiEndpoints.comment_issue(issue_key)
+        url = f"https://{self.jira_url}{endpoint}"
+
+        headers = {
+            "Accept": "application/json",
+            "Authorization": f"Bearer {self.token}"
+        }
+
+        payload = { 
+            "body": comment_message 
+        }
+
+        response = self.httpRequest.post_api_request(url, headers=headers, json=payload)
+        return response
+
+    def update_exception_comment_issue(self, jira_issue: str, log: Logger, error_message: str = None):
+        try:
+            message = f"[ERROR] Dispensation Error | Failed to process dispensation. Error: {error_message}."
+           
+            self.comment_issue(message, jira_issue)
+            log.info(f"Commented on Ticket {jira_issue} with error.")
+        except Exception as e:
+            log.error(f"Failed to comment issue with error : {e}")
+
+    def update_successful_comment_issue(self, jira_issue: str, log: Logger):
+        try:
+            message = "[SUCESS] Dispensation successful."
+          
+           
+            self.comment_issue(message, jira_issue)
+            log.info(f"Commented on Ticket {jira_issue} with success.")
+        except Exception as e:
+            log.error(f"Failed to comment issue : {e}")
