@@ -105,8 +105,8 @@ def main():
                 
             end_date = helper.get_future_date(SCA_END_DISPENSATION_DATE)
 
-            if len(packages_profile):
-                raise ValueError("Packages not found")
+            if len(packages_profile) == 0:
+                raise ValueError("All packages not found")
 
             if not end_date:
                 raise ValueError("End date not speicified")
