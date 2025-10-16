@@ -157,7 +157,7 @@ def main():
                 image_package_info = cx_api_actions.get_csec_package_id_graphql(latest_scan_id, project_id, image_id, csec_package)
                 package = helper.get_nested(image_package_info, ['data', 'imagesVulnerabilities', 'items'])
                 if len(package) == 0:
-                    raise ValueError("Packages not found")
+                    raise ValueError(f"{csec_package} Package not found")
                 package_id = package[0].get('id')
                 update_csec_package = cx_api_actions.post_csec_update_package(project_id, [package_id], "Snoozed", end_date, latest_scan_id, image_id=None, comment=None)
 
