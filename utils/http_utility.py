@@ -16,13 +16,17 @@ class HttpRequests:
                     return response.text
             return None
         elif response.status_code in [400]:
-            error_details = response.json()
-            self.logger.info(f"{method_name} {response.url} - Status Code: {response.status_code} - Response Body: {response.json()}")
+            try:
+                error_details = response.json()
+            except Exception:
+                error_details = response.text.strip() or "Unknown error"
+
+            self.logger.info(f"{method_name} {response.url} - Status Code: {response.status_code} - Response Body: {error_details}")
             raise ValueError(f"Bad Request - Invalid request. Some required information is missing or formatted incorrectly.")
         else:
             try:
                 error_details = response.json()
-            except ValueError:
+            except Exception:
                 error_details = response.text.strip() or "Unknown error"
             
             raise Exception(f"{response.status_code} Error: {error_details}")
