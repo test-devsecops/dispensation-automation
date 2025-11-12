@@ -134,6 +134,7 @@ def main():
             
             project_id = cx_projects[0].get('id')
             project_ids = [project_id]
+
             latest_scan = cx_api_actions.get_project_latest_scan_by_branch(project_ids, CSEC_BRANCH)
 
             if not latest_scan:
@@ -151,14 +152,37 @@ def main():
                 raise TypeError("CSEC image ID API returned None (CSEC details insufficient)")
             
             image = helper.get_nested(images, ['data', 'images', 'items'])
+
             if len(image) == 0:
                 raise TypeError("CSEC image ID API returned no items (CSEC details insufficient)")
             
-            image_id = image[0].get('imageId')
-            
+            image_id = None
+            csec_vuln_details = None
+           
             for csec_package in  CSEC_PACKAGES:
-                image_package_info = cx_api_actions.get_csec_package_id_graphql(latest_scan_id, project_id, image_id, csec_package)
+                # Checking for every images if more than one, and look for the correct one
+                image_package_info = {}
+                for img in image:
+
+                    img_id_search = img.get('imageId')
+
+                    # Get Image Vulnerabilities using Package Name
+                    image_package_info = cx_api_actions.get_csec_package_id_graphql(latest_scan_id, project_id, img_id_search, csec_package)
+
+                    image_vuln_details = helper.get_nested(image_package_info, ['data', 'imagesVulnerabilities', 'items'])
+                    if image_vuln_details is None or not image_vuln_details or not image_vuln_details[0]:
+                        continue
+
+                    image_id = img_id_search
+                    break
+                
+                if image_id is None:
+                    raise TypeError(f"CSEC details insufficient from Checkmarx, {csec_package} not found in this project")
+
+                # image_package_info = cx_api_actions.get_csec_package_id_graphql(latest_scan_id, project_id, image_id, csec_package)
+                # print(image_package_info)
                 package = helper.get_nested(image_package_info, ['data', 'imagesVulnerabilities', 'items'])
+                # print(package)
                 if len(package) == 0:
                     raise ValueError(f"{csec_package} Package not found")
                 package_id = package[0].get('id')
