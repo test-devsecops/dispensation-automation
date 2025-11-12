@@ -137,7 +137,8 @@ class CxApiActions:
 
         params = {
             "branch": branch,
-            "project-ids": project_ids
+            "project-ids": project_ids,
+            "engine": "containers"
         }
 
         response = self.httpRequest.get_api_request(url, headers=headers, params=params)
@@ -240,6 +241,7 @@ class CxApiActions:
 
         json_payload = {
             "project_id": project_id,
+            # "branch": branch.get('value'),
             "branch": branch,
             "engines": [
                 "sca"
